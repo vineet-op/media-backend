@@ -8,7 +8,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const { username, email, password, fullName } = req.body
 
-    if ([username, email, password, fullName].some((feild) => feild?.trim() === "")) {
+    if ([username, email, password, fullName].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required")
     }
 
@@ -17,22 +17,31 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     if (existedUser) {
-        throw new ApiError(409, "User already exist")
+        throw new ApiError(409, "User with username or email already exist")
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverImageLocalPath = req.files?.coverImage?.path
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar Image Required")
     }
 
+    let coverImageLocalPath;
+    
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+            coverImageLocalPath = req.files.coverImage[0].path
+    }
+
     const avatar = await fileUploadCloudinary(avatarLocalPath)
-    const coverImage = await fileUploadCloudinary(coverImageLocalPath)
 
     if (!avatar) {
-        throw new ApiError
+        throw new ApiError(400,"Avatar file is required")
     }
+
+    const coverImage = coverImageLocalPath
+    ? await fileUploadCloudinary(coverImageLocalPath)
+    : null
+
 
     const user = await User.create({
         fullName,
